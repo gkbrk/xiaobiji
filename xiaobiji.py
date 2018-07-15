@@ -10,6 +10,22 @@ DB_FILE = 'wiki-database.sqlite'
 WIKI_TITLE = '小笔记 Wiki Test'
 ROOT = 'https://gkbrk.com/cgi-bin/xiaobiji/xiaobiji.py'
 
+accounts = [
+    ('admin', '1234')
+]
+
+def check_edit_login(username, password):
+    for user, passwd in accounts:
+        if user == username and passwd == password:
+            return True
+    return False
+
+def check_view_login(username, password):
+    for user, passwd in accounts:
+        if user == username and passwd == password:
+            return True
+    return False
+
 class Database:
     def __init__(self, filename):
         self.filename = filename
@@ -71,10 +87,12 @@ def from_root(url, *args):
 db = Database(DB_FILE)
 
 @bottle.get('/')
+@bottle.auth_basic(check_view_login)
 def root():
     bottle.redirect(from_root('/page/Home'))
 
 @bottle.get('/page/<name>')
+@bottle.auth_basic(check_view_login)
 def show_page(name):
     page = db.get_page(name)
     if not page:
@@ -84,6 +102,7 @@ def show_page(name):
     return bottle.template('templates/read.tpl', **(dict(globals(), **locals())))
 
 @bottle.get('/page/<name>/edit')
+@bottle.auth_basic(check_view_login)
 def page_edit(name):
     page = db.get_page(name)
     if page:
@@ -94,22 +113,26 @@ def page_edit(name):
     return bottle.template('templates/edit.tpl', **(dict(globals(), **locals())))
 
 @bottle.post('/page/<name>/edit')
+@bottle.auth_basic(check_edit_login)
 def page_edit_post(name):
     content = bottle.request.forms.getunicode('x', '')
     db.insert_page(name, content)
     bottle.redirect(from_root('/page/{}', name))
 
 @bottle.post('/go')
+@bottle.auth_basic(check_view_login)
 def go():
     target = bottle.request.forms.get('target', 'Home')
     bottle.redirect(from_root('/page/{}', target))
 
 @bottle.get('/page/<name>/history')
+@bottle.auth_basic(check_view_login)
 def page_history(name):
     history = db.find_history(name)
     return bottle.template('templates/history.tpl', history=history, name=name, **globals())
 
 @bottle.get('/page/<name>/history/<dt>')
+@bottle.auth_basic(check_view_login)
 def page_historical(name, dt):
     is_read_page = True
     page = db.get_historical_page(name, dt)
@@ -120,6 +143,7 @@ def page_historical(name, dt):
     return bottle.template('templates/read.tpl', **(dict(globals(), **locals())))
 
 @bottle.post('/search')
+@bottle.auth_basic(check_view_login)
 def wiki_search():
     query = bottle.request.forms.getunicode('q')
     if not query:
