@@ -79,7 +79,7 @@ def format_pandoc(s, formatter='org'):
                          stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE
                         ).communicate(s)[0].decode('utf-8')
-    return re.sub('\[([\w ]+)\]', '<a href="{}/page/\\1/">\\1</a>'.format(ROOT), s)
+    return re.sub('\[([\w ]+)\]', '<a href="{}/page/\\1">\\1</a>'.format(ROOT), s)
 
 def from_root(url, *args):
     return '{}{}'.format(ROOT, url).format(*args)
